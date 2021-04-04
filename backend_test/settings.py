@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "django_extensions",
-    "backend_test.utils",
+    "lunch_menu",
 ]
 
 MIDDLEWARE = [

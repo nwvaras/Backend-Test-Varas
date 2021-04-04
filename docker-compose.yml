@@ -21,26 +21,8 @@ services:
     ports:
       - 8000:8000
     depends_on:
-      - jupyterlab
       - postgres
       - redis
-  jupyterlab:
-    build:
-      context: .
-      dockerfile: .docker/Dockerfile_base
-    command: jupyterlab
-    ports:
-      - 8001:8000
-    volumes:
-      - .:/opt/cornershop/backend-test
-    environment:
-      - DJANGO_SETTINGS_MODULE=backend_test.settings
-      - PYTHONDONTWRITEBYTECODE=1
-      - DJANGO_ALLOW_ASYNC_UNSAFE=true
-      - APP=backend_test
-      - QUEUES=celery
-      # forwarded from the host if they exist
-      - UPDATE_PYTHON_REQUIREMENTS_ON_CONTAINERSTART
   postgres:
     image: circleci/postgres:12.3-postgis
     volumes:
@@ -60,7 +42,7 @@ services:
     ports:
       - 5433:5432
   redis:
-    image: redis:5.0.7-alpine
+    image: redis:5.0.12-alpine
     volumes:
       - redis-data:/data
 
