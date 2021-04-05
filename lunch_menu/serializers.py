@@ -10,4 +10,3 @@ class LoginSerializer(serializers.Serializer):
         max_length=100,
         style={'input_type': 'password', 'placeholder': 'Password'}
     )
-    remember_me = serializers.BooleanField()
