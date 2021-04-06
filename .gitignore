@@ -3,6 +3,7 @@
 .env
 .bash_history
 .cache/
+migrations/
 .ipython/
 .coverage*
 !.coveragerc
