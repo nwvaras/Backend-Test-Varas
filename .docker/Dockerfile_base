@@ -7,11 +7,13 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     # compiler for Python C modules
     g++ make libc6-dev
+# Install GNUPG2
 
 RUN groupadd -g 1337 cornershop && \
     useradd -m -d /opt/cornershop -u 1337 -g cornershop cornershop
 
 USER cornershop
+
 
 # install Python requirements
 ADD requirements.txt /tmp/requirements.txt
@@ -31,6 +33,26 @@ FROM python:3.8.3-slim-buster
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     procps vim less
+RUN apt-get install -y gnupg2 && apt-get install -y wget && apt-get install -y curl
+
+# Adding trusting keys to apt for repositories
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+# Adding Google Chrome to the repositories
+RUN sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+# Updating apt to see and install Google Chrome
+RUN apt-get -y update
+# Magic happens
+RUN apt-get install -y google-chrome-stable
+
+# Installing Unzip
+RUN apt-get install -yqq unzip
+# Download the Chrome Driver
+RUN wget -O /tmp/chromedriver.zip http://chromedriver.storage.googleapis.com/`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE`/chromedriver_linux64.zip
+RUN curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE
+# Unzip the Chrome Driver into /usr/local/bin directory
+RUN unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
+# Set display port as an environment variable
+ENV DISPLAY=:99
 
 RUN groupadd -g 1337 cornershop && \
     useradd -m -d /opt/cornershop -u 1337 -g cornershop cornershop

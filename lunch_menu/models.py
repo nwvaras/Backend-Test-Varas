@@ -16,6 +16,10 @@ class CreateMixin(models.Model):
 
 
 class Menu(CreateMixin):
+    """
+    Model referencing to the Menu of the day, for the Cornershop company.
+
+    """
     name = models.CharField(max_length=256)
     ready = models.BooleanField(default=False)
     day = models.DateField(default=datetime.date.today)
@@ -27,6 +31,10 @@ class Menu(CreateMixin):
 
 
 class Choice(models.Model):
+    """
+    Model referencing to the Choices availables to select for the Menu.
+
+    """
     description = models.TextField()
 
     def __str__(self):
