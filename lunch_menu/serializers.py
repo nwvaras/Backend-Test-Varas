@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db.models.query import EmptyQuerySet
 from rest_framework import serializers
 
@@ -27,19 +29,18 @@ class ChoiceSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class FilteredPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
-    def get_queryset(self):
-        menu = self.context.get('menu', None)
-        if menu is not None:
-            return menu.choices.all()
-        else:
-            return EmptyQuerySet()
-
 
 class EmployeeMenuChoiceSerializer(serializers.ModelSerializer):
-    choice = FilteredPrimaryKeyRelatedField(allow_null=True, required=True)
 
     class Meta:
         model = EmployeeMenuChoice
-        fields = ('menu', 'employee', 'choice')
+        fields = ('employee', 'choice','customization')
         read_only_fields = ('menu', 'employee')
+
+    def validate(self, data):
+        """
+        Check the time of creation.
+        """
+        if not self.instance.can_choose_meal():
+            raise serializers.ValidationError("Menu choice must be selected before 11 AM CLT!")
+        return data

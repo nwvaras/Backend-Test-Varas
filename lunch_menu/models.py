@@ -23,8 +23,6 @@ class Menu(CreateMixin):
     name = models.CharField(max_length=256)
     ready = models.BooleanField(default=False)
     day = models.DateField(default=datetime.date.today)
-    expiration_time = models.TimeField(default=datetime.time(11, 00))
-    choices = models.ManyToManyField('Choice')
 
     def __str__(self):
         return self.name
@@ -36,6 +34,7 @@ class Choice(models.Model):
 
     """
     description = models.TextField()
+    menu = models.ForeignKey(Menu,related_name='choices',on_delete=models.DO_NOTHING)
 
     def __str__(self):
         return self.description
@@ -63,9 +62,12 @@ class EmployeeMenuChoice(models.Model):
     Model referencing to the Employee Choice for the Menu.
 
     """
-    menu = models.ForeignKey("Menu",on_delete=models.DO_NOTHING)
-    employee = models.ForeignKey("Employee",on_delete=models.DO_NOTHING)
-    choice = models.ForeignKey("Choice", null=True,on_delete=models.DO_NOTHING)
+    employee = models.ForeignKey(Employee,on_delete=models.DO_NOTHING)
+    choice = models.ForeignKey(Choice,related_name='employee_choices', null=True,on_delete=models.DO_NOTHING)
+    customization = models.TextField(default="")
 
     def __str__(self):
-        return f'{self.employee} {self.menu} {self.choice}'
+        return f'{self.employee} {self.choice}'
+
+    def can_choose_meal(self):
+        return True if self.choice.menu.day == self.choice.menu.day else False

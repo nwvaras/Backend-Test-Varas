@@ -22,7 +22,7 @@ from .envtools import getenv
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SECRET_KEY = getenv("SECRET_KEY", default="###SECRET_KEY###")
-SLACK_TOKEN = getenv("SLACK_TOKEN", default="xoxb-1957039516384-1930372707589-r7W8uzylJ7RAb1GfWQN2NLM8")
+SLACK_TOKEN = getenv("SLACK_TOKEN", default="none")
 DEBUG = getenv("DEBUG", default=False, coalesce=bool)
 
 ALLOWED_HOSTS = ["*"]
@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_extensions",
     "lunch_menu",
+    "django_tables2",
 ]
 
 MIDDLEWARE = [
@@ -163,75 +164,75 @@ if getenv("BROWSABLE_API_RENDERER", default=False, coalesce=bool):
 # if getenv("SENTRY_DSN", default=None):
 #    sentry_sdk.init(dsn=getenv("SENTRY_DSN"), integrations=[DjangoIntegration()])
 #
-# LOGGING = {
-#     "version": 1,
-#     "disable_existing_loggers": True,
-#     "formatters": {
-#         "fluent_formatter": {
-#             "()": "backend_test.logging_formatter.VerboseFluentRecordFormatter",
-#             "format": {
-#                 "level": "%(levelname)s",
-#                 "pathname": "%(pathname)s",
-#                 "hostname": "%(hostname)s",
-#                 "logger": "%(name)s",
-#                 "module": "%(module)s",
-#                 "funcname": "%(funcName)s",
-#                 "namespace": os.getenv("KUBERNETES_NAMESPACE", "localhost"),
-#                 "release": os.getenv("GIT_HASH", "local"),
-#             },
-#             "encoder_class": "django.core.serializers.json.DjangoJSONEncoder",
-#             "raise_on_format_error": DEBUG,
-#         },
-#         "simple": {
-#             "format": "[{asctime}] {levelname} {message}",
-#             "style": "{",
-#             "datefmt": "%d/%b/%Y %H:%M:%S",
-#         },
-#         "django.server": {
-#             "()": "django.utils.log.ServerFormatter",
-#             "format": "[{server_time}] {message}",
-#             "style": "{",
-#         },
-#     },
-#     "filters": {"require_debug_true": {"()": "django.utils.log.RequireDebugTrue"}},
-#     "handlers": {
-#         "sentry": {
-#             "level": "WARNING",
-#             "class": "sentry_sdk.integrations.logging.EventHandler",
-#         },
-#         "console": {
-#             "class": "logging.StreamHandler",
-#             "level": "DEBUG",
-#             "formatter": "simple",
-#             "filters": ["require_debug_true"],
-#         },
-#         "fluent": {
-#             "class": "fluent.handler.FluentHandler",
-#             "host": os.getenv("FLUENT_HOST", "fluentbit"),
-#             "port": int(os.getenv("FLUENT_PORT", 24224)),
-#             "tag": os.getenv("FLUENT_TAG", "catalog"),
-#             "formatter": "fluent_formatter",
-#             "level": "INFO",
-#         },
-#         "django.server": {
-#             "level": "INFO",
-#             "class": "logging.StreamHandler",
-#             "formatter": "django.server",
-#         },
-#     },
-#     "root": {"level": "WARNING", "handlers": ["sentry"]},
-#     "loggers": {
-#         "django": {"handlers": ["console"], "propagate": True},
-#         "django.db": {
-#             "handlers": ["console"],
-#             "propagate": False,
-#             "level": os.getenv("DB_LOGGING_LEVEL", "INFO"),
-#         },
-#         "django.server": {"handlers": ["django.server"], "propagate": False},
-#         "backend_test": {
-#             "handlers": ["fluent", "console"],
-#             "level": os.getenv("APP_LOGGING_LEVEL", "INFO"),
-#             "propagate": True,
-#         },
-#     },
-# }
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": True,
+    "formatters": {
+        "fluent_formatter": {
+            "()": "backend_test.logging_formatter.VerboseFluentRecordFormatter",
+            "format": {
+                "level": "%(levelname)s",
+                "pathname": "%(pathname)s",
+                "hostname": "%(hostname)s",
+                "logger": "%(name)s",
+                "module": "%(module)s",
+                "funcname": "%(funcName)s",
+                "namespace": os.getenv("KUBERNETES_NAMESPACE", "localhost"),
+                "release": os.getenv("GIT_HASH", "local"),
+            },
+            "encoder_class": "django.core.serializers.json.DjangoJSONEncoder",
+            "raise_on_format_error": DEBUG,
+        },
+        "simple": {
+            "format": "[{asctime}] {levelname} {message}",
+            "style": "{",
+            "datefmt": "%d/%b/%Y %H:%M:%S",
+        },
+        "django.server": {
+            "()": "django.utils.log.ServerFormatter",
+            "format": "[{server_time}] {message}",
+            "style": "{",
+        },
+    },
+    "filters": {"require_debug_true": {"()": "django.utils.log.RequireDebugTrue"}},
+    "handlers": {
+        "sentry": {
+            "level": "WARNING",
+            "class": "sentry_sdk.integrations.logging.EventHandler",
+        },
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": "DEBUG",
+            "formatter": "simple",
+            "filters": ["require_debug_true"],
+        },
+        "fluent": {
+            "class": "fluent.handler.FluentHandler",
+            "host": os.getenv("FLUENT_HOST", "fluentbit"),
+            "port": int(os.getenv("FLUENT_PORT", 24224)),
+            "tag": os.getenv("FLUENT_TAG", "catalog"),
+            "formatter": "fluent_formatter",
+            "level": "INFO",
+        },
+        "django.server": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "django.server",
+        },
+    },
+    "root": {"level": "WARNING", "handlers": ["sentry"]},
+    "loggers": {
+        "django": {"handlers": ["console"], "propagate": True},
+        "django.db": {
+            "handlers": ["console"],
+            "propagate": False,
+            "level": os.getenv("DB_LOGGING_LEVEL", "INFO"),
+        },
+        "django.server": {"handlers": ["django.server"], "propagate": False},
+        "backend_test": {
+            "handlers": ["fluent", "console"],
+            "level": os.getenv("APP_LOGGING_LEVEL", "INFO"),
+            "propagate": True,
+        },
+    },
+}

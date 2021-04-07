@@ -3,10 +3,10 @@
 {% block title %}¡Bienvenid@!{% endblock %}
 {% block content %}
 <h1>Create new Menu</h1>
-<form id="menu-creation"  method="POST">
+<form action="{% url 'menu:menu_creation'%}" id="menu-creation"  method="POST">
     {% csrf_token %}
     {% render_form menu_serializer %}
-    <input type="submit" value="Save">
+    <input type="submit" id="create_menu" value="Save">
 </form>
 <h1>Create new Meal Choice</h1>
 <form id="choice-creation"  method="POST">

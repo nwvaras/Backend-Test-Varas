@@ -1,6 +1,7 @@
 from django.shortcuts import render
-
+from django.shortcuts import get_object_or_404
 # Create your views here.
+
 from rest_framework.decorators import action
 from rest_framework.generics import CreateAPIView, get_object_or_404
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
@@ -13,12 +14,66 @@ from .apps import SlackClient
 from .models import Menu, Choice, Employee, EmployeeMenuChoice
 
 
-class MenuCreationView(APIView):
+class MenuViewSet(ViewSet):
+    """
+    Employee View Set. Contains method to obtain the menu choices for the employee
+    :return If it is on time, returns a HTML template or a JSON, depending on the request. Else a 404
+    """
+    renderer_classes = [JSONRenderer, TemplateHTMLRenderer]
+    template_name = 'employee_choices.html'
+
+    def retrieve(self, request, pk=None):
+        employees_choices = EmployeeMenuChoice.objects.filter(choice__menu=pk)
+        return Response({'employees_choices': employees_choices, "menu_pk": pk})
+
+
+class EmployeeViewSet(ViewSet):
+    """
+    Employee View Set. Contains method to obtain the menu choices for the employee
+    :return If it is on time, returns a HTML template or a JSON, depending on the request. Else a 404
+    """
+    renderer_classes = [JSONRenderer, TemplateHTMLRenderer]
+    template_name = 'menu_choice.html'
+
+    @action(detail=True, methods=['get'])
+    def menu_list(self, request, pk=None):
+        employee_choice = get_object_or_404(EmployeeMenuChoice, pk=pk)
+        if employee_choice.can_choose_meal():
+            serializer = EmployeeMenuChoiceSerializer(employee_choice)
+            if request.accepted_renderer.format == 'html':
+                return Response({'serializer': serializer,
+                                 'employee_choice': employee_choice})
+            else:
+                return Response(serializer.data)
+        else:
+            return Response(status=404)
+
+    @action(detail=True, methods=['post'])
+    def select(self, request, pk=None):
+        employee_choice = get_object_or_404(EmployeeMenuChoice, pk=pk)
+        serializer = EmployeeMenuChoiceSerializer(employee_choice, data={'choice': request.data['choice']})
+        if serializer.is_valid():
+            serializer.save()
+            if request.accepted_renderer.format == 'html':
+                return Response({'serializer': serializer,
+                                 'employee_choice': employee_choice})
+            else:
+                return Response(serializer.data)
+        else:
+            return Response(status=404)
+
+
+class MenuCreationView(CreateAPIView):
     renderer_classes = [TemplateHTMLRenderer]
+    serializer_class = MenuSerializer
     template_name = 'menu.html'
 
     def get(self, request):
-        return Response({'menu_serializer': MenuSerializer(), "choice_serializer": ChoiceSerializer()})
+        return Response({'menu_serializer': self.get_serializer_class(), "choice_serializer": ChoiceSerializer()})
+
+    def post(self, request, *args, **kwargs):
+        self.create(request, *args, **kwargs)
+        return Response({"menu_serializer": self.get_serializer_class(), "choice_serializer": ChoiceSerializer()})
 
 
 class ChoiceView(CreateAPIView):
@@ -44,30 +99,35 @@ class LoginView(APIView):
 
 class EmployeeViewSet(ViewSet):
     """
-    Example empty viewset demonstrating the standard
-    actions that will be handled by a router class.
-
-    If you're using format suffixes, make sure to also include
-    the `format=None` keyword argument for each action.
+    Employee View Set. Contains method to obtain the menu choices for the employee
+    :return If it is on time, returns a HTML template or a JSON, depending on the request. Else a 404
     """
-    renderer_classes = [TemplateHTMLRenderer]
+    renderer_classes = [JSONRenderer, TemplateHTMLRenderer]
     template_name = 'menu_choice.html'
 
     @action(detail=True, methods=['get'])
     def menu_list(self, request, pk=None):
-        employee_choice = EmployeeMenuChoice.objects.get(pk=pk)
-        menu = employee_choice.menu
-        return Response(
-            {'employee_choice_serializer': EmployeeMenuChoiceSerializer(employee_choice, context={"menu": menu}),
-             "menu": menu,'employee_choice': employee_choice})
+        employee_choice = get_object_or_404(EmployeeMenuChoice, pk=pk)
+        if employee_choice.can_choose_meal():
+            serializer = EmployeeMenuChoiceSerializer(employee_choice)
+            if request.accepted_renderer.format == 'html':
+                return Response({'serializer': serializer,
+                                 'employee_choice': employee_choice})
+            else:
+                return Response(serializer.data)
+        else:
+            return Response(status=404)
 
     @action(detail=True, methods=['post'])
     def select(self, request, pk=None):
-        employee_choice = EmployeeMenuChoice.objects.get(pk=pk)
-        menu = employee_choice.menu
-        employee_serializer = EmployeeMenuChoiceSerializer(employee_choice,data={'choice': request.data['choice']},context={"menu":menu})
-        employee_serializer.is_valid()
-        employee_serializer.save()
-        return Response(
-            {'employee_choice_serializer': EmployeeMenuChoiceSerializer(employee_choice, context={"menu": menu}),
-             "menu": menu,'employee_choice': employee_choice})
+        employee_choice = get_object_or_404(EmployeeMenuChoice, pk=pk)
+        serializer = EmployeeMenuChoiceSerializer(employee_choice, data={'choice': request.data['choice']})
+        if serializer.is_valid():
+            serializer.save()
+            if request.accepted_renderer.format == 'html':
+                return Response({'serializer': serializer,
+                                 'employee_choice': employee_choice})
+            else:
+                return Response(serializer.data)
+        else:
+            return Response(status=404)
