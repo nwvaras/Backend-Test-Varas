@@ -8,11 +8,4 @@
     {% render_form menu_serializer %}
     <input type="submit" id="create_menu" value="Save">
 </form>
-<h1>Create new Meal Choice</h1>
-<form id="choice-creation"  method="POST">
-    {% csrf_token %}
-    {% render_form choice_serializer %}
-    <input type="submit" value="Save">
-</form>
-
 {% endblock %}

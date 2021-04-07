@@ -1,6 +1,7 @@
 # Create your tests here.
 import pytest
 from django.test import LiveServerTestCase
+from django.contrib.auth.models import User
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
@@ -32,17 +33,27 @@ class TestWithWebDrive(LiveServerTestCase):
         cls.selenium.quit()
         super().tearDownClass()
 
+    def login_user(self):
+        User.objects.create_user('nora', 'nora@cornershop.io', 'password')
+        self.client.login(username='nora', password='password')  # Native django test client
+        cookie = self.client.cookies['sessionid']
+        self.selenium.get(
+            self.live_server_url + '/login/')  # selenium will set cookie domain based on current page domain
+        self.selenium.add_cookie({'name': 'sessionid', 'value': cookie.value, 'secure': False, 'path': '/'})
+
     def test_go_to_menu(self):
+        self.login_user()
         self.selenium.get(self.live_server_url + "/menu/")
         expected_title = "¡Bienvenid@!"
         assert self.selenium.title == expected_title
 
     def test_go_to_login(self):
         self.selenium.get(self.live_server_url + "/menu/login/")
-        element = self.selenium.find_element_by_name("email")
+        element = self.selenium.find_element_by_name("password")
         assert element is not None
 
     def test_create_simple_choice(self):
+        self.login_user()
         menu_name = "Example menu"
         Menu.objects.create(name=menu_name)
         choice_description = "Example Meal"
@@ -54,6 +65,7 @@ class TestWithWebDrive(LiveServerTestCase):
         assert choice.description == choice_description
 
     def test_create_empty_menu(self):
+        self.login_user()
         menu_name = "Example Menu"
         menu_date = "08042021"
         self.selenium.get(self.live_server_url + "/menu/")
@@ -81,6 +93,7 @@ class TestWithWebDrive(LiveServerTestCase):
         assert choice_2.description == other_option_text
 
     def test_see_employees_choices(self):
+        self.login_user()
         menu = Menu.objects.create(name="Example Menu")
         choice_1 = Choice.objects.create(description="Example meal N°1", menu=menu)
         choice_2 = Choice.objects.create(description="Example meal N°2", menu=menu)
