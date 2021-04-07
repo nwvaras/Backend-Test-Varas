@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load rest_framework %}
+{% block title %}¡Bienvenid@!{% endblock %}
+{% block content %}
+<h1>Create new Menu</h1>
+{{ menu.name}}
+{% for choice in menu.choices.all %}
+<li>{{ choice.description }}</li>
+{% endfor %}
+<form action="{% url 'menu:choice-select' pk=employee_choice.pk %}" id="choice-creation"  method="POST">
+    {% csrf_token %}
+    {% render_form employee_choice_serializer %}
+    <input type="submit" id="send" value="Save">
+</form>
+
+{% endblock %}

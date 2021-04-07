@@ -7,7 +7,6 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     # compiler for Python C modules
     g++ make libc6-dev
-# Install GNUPG2
 
 RUN groupadd -g 1337 cornershop && \
     useradd -m -d /opt/cornershop -u 1337 -g cornershop cornershop
