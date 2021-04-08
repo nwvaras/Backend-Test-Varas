@@ -37,15 +37,6 @@ elif [[ "${1}" == "jupyterlab" ]]; then
 
     exec jupyter lab
 
-elif [[ "${1}" == "celery" ]]; then
-    APP="${APP:-backend_test}"
-    QUEUES="${QUEUES:-celery}"
-    LOG_LEVEL="${LOG_LEVEL:-info}"
-    CONCURRENCY="${CONCURRENCY:-1}"
-    MAX_TASKS="${MAX_TASKS:-1000}"
-
-    exec celery -A $APP -l $LOG_LEVEL -c $CONCURRENCY --maxtasksperchild=$MAX_TASKS worker -Q $QUEUES
-
 else
     
     exec gunicorn --config=gunicorn_config.py backend_test.wsgi
