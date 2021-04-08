@@ -2,10 +2,12 @@
 {% load rest_framework %}
 {% block title %}¡Bienvenid@!{% endblock %}
 {% block content %}
+<div class="container">
 <h1>Create new Menu</h1>
-<form action="{% url 'menu:menu_creation'%}" id="menu-creation"  method="POST">
+<form action="{% url 'menu:menu-list'%}" id="menu-creation"  method="POST">
     {% csrf_token %}
     {% render_form menu_serializer %}
-    <input type="submit" id="create_menu" value="Save">
+    <input type="submit" id="create_menu" class="btn" value="Save">
 </form>
+</div>
 {% endblock %}

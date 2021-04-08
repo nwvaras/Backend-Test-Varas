@@ -152,8 +152,8 @@ REST_FRAMEWORK = {
 
 if getenv("BROWSABLE_API_RENDERER", default=False, coalesce=bool):
     REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = REST_FRAMEWORK[
-                                                     "DEFAULT_RENDERER_CLASSES"
-                                                 ] + ["rest_framework.renderers.BrowsableAPIRenderer"]
+        "DEFAULT_RENDERER_CLASSES"
+    ] + ["rest_framework.renderers.BrowsableAPIRenderer"]
 
 # APP SPECIFIC SETTINGS
 
@@ -161,7 +161,7 @@ if getenv("BROWSABLE_API_RENDERER", default=False, coalesce=bool):
 #    sentry_sdk.init(dsn=getenv("SENTRY_DSN"), integrations=[DjangoIntegration()])
 #
 
-LOGIN_REDIRECT_URL = "/menu/"
+LOGIN_REDIRECT_URL = "/menu/add/"
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": True,

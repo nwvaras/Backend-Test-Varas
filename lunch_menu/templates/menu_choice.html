@@ -2,15 +2,20 @@
 {% load rest_framework %}
 {% block title %}¡Bienvenid@!{% endblock %}
 {% block content %}
-<h1>Create new Menu</h1>
-{{ employee_choice.choice.menu.name}}
-{% for choice in employee_choice.choice.menu.choices.all %}
-<li>{{ choice.description }}</li>
-{% endfor %}
-<form action="{% url 'menu:choice-select' pk=employee_choice.pk %}" id="choice-creation"  method="POST">
+<div class="container">
+<h1>Select today's meal!</h1>
+{{ menu.name}}
+    <ul class="list-group">
+        {% for choice in menu.choices.all %}
+        <li class="list-group-item">Option {{ forloop.counter}}: {{ choice.description }}</li>
+        {% endfor %}
+    </ul>
+</div>
+<div id="container" class="container">
+<form action="{% url 'menu:menu-employee-choice' pk=menu.pk %}" id="choice-creation"  method="POST">
     {% csrf_token %}
     {% render_form serializer %}
-    <input type="submit" id="send" value="Save">
+    <input class="btn btn-primary" type="submit" id="send" value="Save">
 </form>
-
+</div>
 {% endblock %}

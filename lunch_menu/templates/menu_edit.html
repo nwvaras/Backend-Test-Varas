@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load rest_framework %}
+{% block title %}¡Bienvenid@!{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Edit Menu: {{ menu.name }}</h1>
+    <h3>Choices</h3>
+    <ul class="list-group">
+        {% for choice in menu.choices.all %}
+
+            <form action="{% url 'menu:choice-delete' pk=choice.pk %}" id="delete-choice" method="POST">
+                {% csrf_token %}
+                <li class="list-group-item">Option {{ forloop.counter }}: {{ choice.description }}
+                <input type="hidden" name="menu_pk" value="{{ menu.pk }}">
+                <button  id="delete-choice-button" class="btn btn-danger" type="submit">Delete</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    <form action="{% url 'menu:menu-change' pk=menu.pk %}" id="menu-edit" method="POST">
+        {% csrf_token %}
+        {% render_form serializer %}
+        <input type="submit" id="edit_menu" class="btn" value="Save">
+    </form>
+    <form action="{% url 'menu:menu-add-choices' pk=menu.pk %}" id="go-to-choice" method="GET">
+        <input type="submit" id="go_to_add_choice" class="btn" value="Add Choices">
+    </form>
+
+</div>
+{% endblock %}
