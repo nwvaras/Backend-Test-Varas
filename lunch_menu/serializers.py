@@ -1,3 +1,5 @@
+import datetime
+
 from django.db.models.query import EmptyQuerySet
 from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField
@@ -8,7 +10,11 @@ from lunch_menu.models import Choice, EmployeeChoice, Menu
 class MenuSerializer(serializers.ModelSerializer):
     class Meta:
         model = Menu
-        fields = "__all__"
+        fields = ("name", "day")
+
+    def create(self, validated_data):
+        menu = Menu.objects.create(**validated_data)
+        return menu
 
 
 class ChoiceSerializer(serializers.ModelSerializer):

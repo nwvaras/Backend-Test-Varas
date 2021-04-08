@@ -5,6 +5,8 @@ from django.db import models
 
 
 # Create your models here.
+
+
 class CreateMixin(models.Model):
     """
     Provides a mixin for annotating a DB object with timestamp and
@@ -24,6 +26,9 @@ class Menu(CreateMixin):
 
     """
 
+    EXPIRE_TIME = datetime.time(23, 00)
+    SEND_TIME = datetime.datetime.now().time()
+
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )  # pylint: disable=invalid-name
@@ -35,7 +40,13 @@ class Menu(CreateMixin):
         return self.name
 
     def can_choose_meal(self):
-        return True if self.day == self.day else False
+        return (
+            datetime.datetime.combine(self.day, self.EXPIRE_TIME)
+            < datetime.datetime.now()
+        )
+
+    def get_menu_url(self):
+        return f"http://localhost:8000/menu/{self.pk}/"
 
 
 class Choice(models.Model):
@@ -45,7 +56,7 @@ class Choice(models.Model):
     """
 
     description = models.TextField()
-    menu = models.ForeignKey(Menu, related_name="choices", on_delete=models.DO_NOTHING)
+    menu = models.ForeignKey(Menu, related_name="choices", on_delete=models.CASCADE)
 
     def __str__(self):
         return self.description

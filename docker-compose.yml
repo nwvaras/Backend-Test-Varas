@@ -1,7 +1,7 @@
 version: '3.7'
 
 services:
-  backend:
+  backend: &backend
     build:
       context: .
       dockerfile: .docker/Dockerfile_base
@@ -12,6 +12,7 @@ services:
       - DB_LOGGING_LEVEL=${DB_LOGGING_LEVEL:-INFO}
       - DJANGO_SETTINGS_MODULE=backend_test.settings
       - APP=backend_test
+      - SLACK_TOKEN=${SLACK_TOKEN}
       - QUEUES=celery
       - PYTHONDONTWRITEBYTECODE=1
       # forwarded from the host if they exist
@@ -45,6 +46,15 @@ services:
     image: redis:5.0.12-alpine
     volumes:
       - redis-data:/data
+  celery_worker:
+    <<: *backend
+    ports: []
+    environment:
+      - DJANGO_SETTINGS_MODULE=backend_test.settings
+    depends_on:
+      - redis
+    command: celery -A backend_test worker --loglevel=info -B
+    container_name: celery
 
 volumes:
   postgres123-data: {}

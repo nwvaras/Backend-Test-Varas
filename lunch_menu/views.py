@@ -1,15 +1,15 @@
-from django.shortcuts import get_object_or_404, redirect, render
+import datetime
+
+from django.shortcuts import redirect
 
 # Create your views here.
 from rest_framework import permissions
 from rest_framework.decorators import action
-from rest_framework.generics import CreateAPIView, get_object_or_404
+from rest_framework.generics import CreateAPIView
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
 
-from .apps import SlackClient
 from .models import Choice, EmployeeChoice, Menu
 from .serializers import (
     ChoiceSerializer,
@@ -19,9 +19,11 @@ from .serializers import (
 )
 from rest_framework.decorators import api_view
 
+from .tasks import send_reminders
+
 
 class MenuViewSet(ViewSet, CreateAPIView):
-    ##TODO: Edit menu, add buttons to add choices in edit view, slack celery, refactor fixtures in test, fix what happens when there is no pk in obtain
+    ##TODO: slack celery, refactor fixtures in test, fix what happens when there is no pk in obtain, add time validation, re-send reminder when choice gets eliminated
     """
     Menu View Set. Contains method to obtain the menu choices for the employee
     :return If it is on time, returns a HTML template or a JSON, depending on the request. Else a 404
@@ -55,14 +57,15 @@ class MenuViewSet(ViewSet, CreateAPIView):
         POST /menu/
         Create a new menu from the request.
         """
-        super().create(request)
-        return Response(
-            {
-                "menu_serializer": self.get_serializer_class(),
-                "choice_serializer": ChoiceSerializer(),
-            },
-            template_name="menu.html",
+
+        menu_serializer = self.get_serializer_class()(
+            data={"name": request.data["name"], "day": request.data["day"]}
         )
+        menu_serializer.is_valid(raise_exception=True)
+        menu = menu_serializer.save()
+
+        send_reminders.delay(menu.pk)
+        return redirect("menu:menu-change", pk=menu.pk)
 
     @action(detail=False, methods=["get"], name="Create menu for the day")
     def add(self, request):
@@ -167,9 +170,9 @@ class MenuViewSet(ViewSet, CreateAPIView):
         POST /menu/:pk/add_choices/
         Update menu information.
         """
-
+        menu = Menu.objects.get(pk=pk)
         serializer = self.get_serializer_class()(
-            data={"description": request.data["description"], "menu": pk}
+            menu, data={"description": request.data["description"], "menu": pk}
         )
         if serializer.is_valid():
             serializer.save()
