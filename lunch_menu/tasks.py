@@ -3,15 +3,18 @@ from django.conf import settings
 
 from lunch_menu.models import Menu
 
-
 from .serializers import ChoiceSerializer
 from .utils import SlackClient
 
 
 @shared_task
 def send_reminders(menu_id):
+    """
+    Celery task to send messages to employees.
+    :param menu_id: A menu id/pk
+    :return: Nothing
+    """
     slack = SlackClient(settings.SLACK_TOKEN)
-    """Celery task to send menu to employees."""
     employees = slack.users_list()["members"]
     menu = Menu.objects.prefetch_related("choices").get(pk=menu_id)
     for employee in employees:

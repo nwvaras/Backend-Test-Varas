@@ -4,13 +4,15 @@ from django.shortcuts import redirect
 
 # Create your views here.
 from rest_framework import permissions
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.generics import CreateAPIView
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
 from backend_test.celery import debug_task
+from lunch_menu.tasks import send_reminders
+
 from .models import Choice, EmployeeChoice, Menu
 from .serializers import (
     ChoiceSerializer,
@@ -18,21 +20,20 @@ from .serializers import (
     EmployeeChoiceSerializer,
     MenuSerializer,
 )
-from rest_framework.decorators import api_view
-
-from lunch_menu.tasks import send_reminders
 
 
 class MenuViewSet(ViewSet, CreateAPIView):
-    ##TODO: refactor fixtures in test, fix what happens when there is no pk in obtain,
     """
-    Menu View Set. Contains method to obtain the menu choices for the employee
-    :return If it is on time, returns a HTML template or a JSON, depending on the request. Else a 404
+    Menu View Set. Contains all the methods that interact with a menu
     """
 
     renderer_classes = [JSONRenderer, TemplateHTMLRenderer]
 
     def get_serializer_class(self):
+        """
+        Get the serializer for the action in the ViewSet
+        :return: A Serializer
+        """
         if self.action == "get_add_choices_form":
             return ChoiceSerializer
         elif self.action == "add_choices":
@@ -46,6 +47,7 @@ class MenuViewSet(ViewSet, CreateAPIView):
         """
         Instantiates and returns the list of permissions that this view requires.
         Only retrieve is free for everyone. Every other action requires authentication
+        :return: The permissions required list.
         """
         if self.action == "retrieve":
             permission_classes = []
@@ -238,5 +240,9 @@ class MenuViewSet(ViewSet, CreateAPIView):
 
 @api_view(["POST"])
 def delete_choice(request, pk=None):
+    """
+    POST /menu/choice/:pk/delete
+    Endpoint for deleting choices in a menu.
+    """
     Choice.objects.filter(pk=pk).delete()
     return redirect("menu:menu-edit", pk=request.data["menu_pk"])
