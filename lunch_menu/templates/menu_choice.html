@@ -12,10 +12,16 @@
     </ul>
 </div>
 <div id="container" class="container">
+{% if serializer %}
+
 <form action="{% url 'menu:menu-employee-choice' pk=menu.pk %}" id="choice-creation"  method="POST">
     {% csrf_token %}
     {% render_form serializer %}
     <input class="btn btn-primary" type="submit" id="send" value="Save">
 </form>
+
+{% else %}
+<h2 id="too-late">Too late to choose a meal :(!</h2>
+{% endif %}
 </div>
 {% endblock %}

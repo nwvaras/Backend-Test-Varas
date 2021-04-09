@@ -1,6 +1,7 @@
 import datetime
 import uuid
 
+from django.conf import settings
 from django.db import models
 
 
@@ -26,14 +27,13 @@ class Menu(CreateMixin):
 
     """
 
-    EXPIRE_TIME = datetime.time(23, 00)
-    SEND_TIME = datetime.datetime.now().time()
+    EXPIRE_TIME = datetime.time(15, 00)
 
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )  # pylint: disable=invalid-name
     name = models.CharField(max_length=256)
-    ready = models.BooleanField(default=False)
+    sent = models.BooleanField(default=False)
     day = models.DateField(default=datetime.date.today)
 
     def __str__(self):
@@ -42,11 +42,12 @@ class Menu(CreateMixin):
     def can_choose_meal(self):
         return (
             datetime.datetime.combine(self.day, self.EXPIRE_TIME)
-            < datetime.datetime.now()
+            > datetime.datetime.now()
         )
 
+    @property
     def get_menu_url(self):
-        return f"http://localhost:8000/menu/{self.pk}/"
+        return f"{settings.SERVER_URL}menu/{self.pk}/"
 
 
 class Choice(models.Model):

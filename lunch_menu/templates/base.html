@@ -11,7 +11,18 @@
 <body>
 {% load rest_framework %}
 <div id="content">
-
+    {% block err %}
+    {% if serializer.data and serializer.errors %}
+    <div class="alert alert-danger" role="alert">
+        Error!
+    </div>
+    {% endif %}
+    {% if message %}
+    <div class="alert alert-primary" role="alert">
+        {{ message }}
+    </div>
+    {% endif %}
+    {% endblock %}
     {% block content %}{% endblock %}
 </div>
 </body>

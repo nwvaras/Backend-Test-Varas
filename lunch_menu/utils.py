@@ -26,7 +26,7 @@ class SlackClient:
         )
         return block_options
 
-    def reminder(self, user, link, popup_text, options):
+    def message(self, user, link, popup_text, options):
         ending_block = {
             "type": "section",
             "text": {"type": "plain_text", "text": "Have a nice day!"},

@@ -39,7 +39,7 @@ class FilteredPrimaryKeyRelatedField(PrimaryKeyRelatedField):
 
 
 class EmployeeChoiceSerializer(serializers.ModelSerializer):
-    choice = FilteredPrimaryKeyRelatedField(allow_null=True, required=True)
+    choice = FilteredPrimaryKeyRelatedField(allow_null=False, required=True)
 
     class Meta:
         model = EmployeeChoice

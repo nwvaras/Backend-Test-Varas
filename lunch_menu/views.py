@@ -10,6 +10,7 @@ from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
+from backend_test.celery import debug_task
 from .models import Choice, EmployeeChoice, Menu
 from .serializers import (
     ChoiceSerializer,
@@ -19,11 +20,11 @@ from .serializers import (
 )
 from rest_framework.decorators import api_view
 
-from .tasks import send_reminders
+from lunch_menu.tasks import send_reminders
 
 
 class MenuViewSet(ViewSet, CreateAPIView):
-    ##TODO: slack celery, refactor fixtures in test, fix what happens when there is no pk in obtain, add time validation, re-send reminder when choice gets eliminated
+    ##TODO: refactor fixtures in test, fix what happens when there is no pk in obtain,
     """
     Menu View Set. Contains method to obtain the menu choices for the employee
     :return If it is on time, returns a HTML template or a JSON, depending on the request. Else a 404
@@ -61,11 +62,36 @@ class MenuViewSet(ViewSet, CreateAPIView):
         menu_serializer = self.get_serializer_class()(
             data={"name": request.data["name"], "day": request.data["day"]}
         )
-        menu_serializer.is_valid(raise_exception=True)
-        menu = menu_serializer.save()
+        if menu_serializer.is_valid():
+            menu = menu_serializer.save()
+            send_reminders.delay(menu.pk)
+            return redirect("menu:menu-edit", pk=menu.pk)
+        else:
+            return Response(
+                {
+                    "serializer": menu_serializer,
+                },
+                template_name="menu.html",
+            )
 
+    @action(detail=True, methods=["post"], name="Send reminder to slack")
+    def send_reminder(self, request, pk=None):
+        """
+        POST /menu/:pk/send_reminder/
+        Send reminder to employees in slack
+        """
+        menu = Menu.objects.get(pk=pk)
+        menu.sent = True
+        menu.save()
         send_reminders.delay(menu.pk)
-        return redirect("menu:menu-change", pk=menu.pk)
+        return Response(
+            {
+                "serializer": self.get_serializer_class()(menu),
+                "menu": menu,
+                "message": "The menu has been sent to the employees.",
+            },
+            template_name="menu_edit.html",
+        )
 
     @action(detail=False, methods=["get"], name="Create menu for the day")
     def add(self, request):
@@ -75,8 +101,7 @@ class MenuViewSet(ViewSet, CreateAPIView):
         """
         return Response(
             {
-                "menu_serializer": self.get_serializer_class(),
-                "choice_serializer": ChoiceSerializer(),
+                "serializer": self.get_serializer_class(),
             },
             template_name="menu.html",
         )
@@ -85,7 +110,7 @@ class MenuViewSet(ViewSet, CreateAPIView):
     def employee_choice(self, request, pk=None):
         """
         POST /menu/:pk/employee_choice/
-        Obtain employee choice creator template.
+        Create employee choice .
         """
         menu = Menu.objects.get(pk=pk)
         employee_choice_serializer = EmployeeChoiceSerializer(
@@ -96,12 +121,19 @@ class MenuViewSet(ViewSet, CreateAPIView):
             if request.accepted_renderer.format == "html":
                 return Response(
                     {"serializer": employee_choice_serializer, "menu": menu},
-                    template_name="menu_choice.html",
+                    template_name="choice_ok.html",
                 )
             else:
                 return Response(employee_choice_serializer.data)
         else:
-            return Response(status=404)
+            return Response(
+                {
+                    "serializer": employee_choice_serializer,
+                    "menu": menu,
+                },
+                template_name="menu_choice.html",
+                status=404,
+            )
 
     def retrieve(self, request, pk=None):
         """
@@ -119,7 +151,10 @@ class MenuViewSet(ViewSet, CreateAPIView):
             else:
                 return Response(employee_choice_serializer.data)
         else:
-            return Response(status=404)
+            return Response(
+                {"menu": menu, "serializer": None},
+                template_name="menu_choice.html",
+            )
 
     @action(detail=True, methods=["get"], name="Get all employee choices for the menu")
     def choices(self, request, pk=None):
@@ -149,9 +184,12 @@ class MenuViewSet(ViewSet, CreateAPIView):
         )
         if serializer.is_valid():
             serializer.save()
-            return redirect("menu:menu-change", pk=pk)
+            return redirect("menu:menu-edit", pk=pk)
         else:
-            return redirect("menu:menu-add-choices", pk=pk)
+            return Response(
+                {"serializer": ChoiceSerializer(), "menu_pk": pk},
+                template_name="choices.html",
+            )
 
     @add_choices.mapping.get
     def get_add_choices_form(self, request, pk=None):
@@ -164,35 +202,28 @@ class MenuViewSet(ViewSet, CreateAPIView):
             template_name="choices.html",
         )
 
-    @action(detail=True, methods=["post"], name="Change menu information")
-    def change(self, request, pk=None):
+    @action(detail=True, methods=["post"], name="Edit menu information")
+    def edit(self, request, pk=None):
         """
         POST /menu/:pk/add_choices/
         Update menu information.
         """
         menu = Menu.objects.get(pk=pk)
-        serializer = self.get_serializer_class()(
-            menu, data={"description": request.data["description"], "menu": pk}
-        )
+        data = request.data
+        serializer = self.get_serializer_class()(menu, data=data)
         if serializer.is_valid():
             serializer.save()
-            return redirect("menu:menu-change", pk=pk)
+            return Response(
+                {"serializer": serializer, "menu": menu, "message": "Saved!"},
+                template_name="menu_edit.html",
+            )
         else:
-            return redirect("menu:menu-add-choices", pk=pk)
+            return Response(
+                {"serializer": serializer, "menu": menu},
+                template_name="menu_edit.html",
+            )
 
-    @change.mapping.get
-    def get_change_form(self, request, pk=None):
-        """
-        GET /menu/:pk/add_choices/
-        Obtain view to edit menu.
-        """
-        menu = Menu.objects.get(pk=pk)
-        return Response(
-            {"serializer": self.get_serializer_class()(menu), "menu": menu},
-            template_name="menu_edit.html",
-        )
-
-    @action(detail=True, methods=["post"], name="Change menu information")
+    @edit.mapping.get
     def get_change_form(self, request, pk=None):
         """
         GET /menu/:pk/add_choices/
@@ -208,4 +239,4 @@ class MenuViewSet(ViewSet, CreateAPIView):
 @api_view(["POST"])
 def delete_choice(request, pk=None):
     Choice.objects.filter(pk=pk).delete()
-    return redirect("menu:menu-change", pk=request.data["menu_pk"])
+    return redirect("menu:menu-edit", pk=request.data["menu_pk"])

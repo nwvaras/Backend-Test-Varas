@@ -17,7 +17,7 @@
         </li>
         {% endfor %}
     </ul>
-    <form action="{% url 'menu:menu-change' pk=menu.pk %}" id="menu-edit" method="POST">
+    <form action="{% url 'menu:menu-edit' pk=menu.pk %}" id="menu-edit" method="POST">
         {% csrf_token %}
         {% render_form serializer %}
         <input type="submit" id="edit_menu" class="btn" value="Save">
@@ -25,6 +25,15 @@
     <form action="{% url 'menu:menu-add-choices' pk=menu.pk %}" id="go-to-choice" method="GET">
         <input type="submit" id="go_to_add_choice" class="btn" value="Add Choices">
     </form>
+    <form action="{% url 'menu:menu-send-reminder' pk=menu.pk %}" id="send-menu" method="POST">
+        {% csrf_token %}
+        <input type="submit" id="send-to-employees" class="btn btn-danger" value="Send to employees">
+    </form>
+    <form action="{% url 'menu:menu-choices' pk=menu.pk %}" id="view-choices" method="GET">
+        {% csrf_token %}
+        <input type="submit" id="go-to-choices" class="btn btn-info" value="View employee choices">
+    </form>
+
 
 </div>
 {% endblock %}

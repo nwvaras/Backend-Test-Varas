@@ -6,7 +6,7 @@
 <h1>Create new Menu</h1>
 <form action="{% url 'menu:menu-list'%}" id="menu-creation"  method="POST">
     {% csrf_token %}
-    {% render_form menu_serializer %}
+    {% render_form serializer %}
     <input type="submit" id="create_menu" class="btn" value="Save">
 </form>
 </div>

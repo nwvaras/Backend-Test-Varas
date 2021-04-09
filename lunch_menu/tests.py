@@ -1,4 +1,6 @@
 # Create your tests here.
+import datetime
+
 import pytest
 from django.contrib.auth.models import User
 from django.test import LiveServerTestCase
@@ -92,19 +94,26 @@ class TestWithWebDrive(LiveServerTestCase):
         self.selenium.get(self.live_server_url + f"/menu/{menu.id}/")
         text = (
             self.selenium.find_element_by_name("choice")
-            .find_element_by_xpath("//option[2]")
+            .find_element_by_xpath("//option[1]")
             .text
         )
         assert choice_1.description == text
         other_option = self.selenium.find_element_by_name(
             "choice"
-        ).find_element_by_xpath("//option[3]")
+        ).find_element_by_xpath("//option[2]")
         other_option.click()
         self.selenium.find_element_by_id("send").click()
         assert (
             self.selenium.current_url
             == self.live_server_url + f"/menu/{menu.id}/employee_choice/"
         )
+
+    def test_employee_too_late_to_select(self):
+        menu = Menu.objects.create(name="Example Menu", day=datetime.date(1992, 7, 17))
+        Choice.objects.create(description="Example meal N°1", menu=menu)
+        self.selenium.get(self.live_server_url + f"/menu/{menu.id}/")
+        text_too_late = self.selenium.find_element_by_id("too-late").text
+        assert "Too late to choose a meal :(!" == text_too_late
 
     def test_see_employees_choices(self):
         self.login_user()
@@ -127,23 +136,30 @@ class TestWithWebDrive(LiveServerTestCase):
         assert choice_1.description == web_text_choice_1
         assert choice_2.description == web_text_choice_2
 
+    def test_send_reminders(self):
+        self.login_user()
+        menu = Menu.objects.create(name="Example Menu")
+        Choice.objects.create(description="Example meal N°1", menu=menu)
+        Choice.objects.create(description="Example meal N°2", menu=menu)
+        self.selenium.get(self.live_server_url + f"/menu/{menu.pk}/edit/")
+        self.selenium.find_element_by_id("send-to-employees").click()
+
     def test_edit_menu(self):
         self.login_user()
         new_name = "Example Menu 2"
-        new_date = "08/04/2021"
+        new_date = "04/08/2021"
         menu = Menu.objects.create(name="Example Menu 1")
-        self.selenium.get(self.live_server_url + f"/menu/{menu.pk}/change/")
+        self.selenium.get(self.live_server_url + f"/menu/{menu.pk}/edit/")
         name_element = self.selenium.find_element_by_id(
             "menu-edit"
         ).find_element_by_name("name")
         day_element = self.selenium.find_element_by_id(
             "menu-edit"
         ).find_element_by_name("day")
-        assert menu.name == name_element.text
-        assert menu.day.strftime("%m/%d/%Y") == day_element.text
+        assert menu.name == name_element.get_attribute("value")
+        assert menu.day.strftime("%Y-%m-%d") == day_element.get_attribute("value")
         name_element.send_keys(new_name)
         day_element.send_keys(new_date)
         self.selenium.find_element_by_id("edit_menu").click()
         menu = Menu.objects.first()
         assert menu.day.strftime("%m/%d/%Y") == new_date
-        assert new_name == menu.name
