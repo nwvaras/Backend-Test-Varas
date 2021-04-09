@@ -118,7 +118,7 @@ class MenuViewSet(ViewSet, CreateAPIView):
         employee_choice_serializer = EmployeeChoiceSerializer(
             data=request.data, context={"menu": menu}
         )
-        if employee_choice_serializer.is_valid():
+        if menu.can_choose_meal() and employee_choice_serializer.is_valid():
             employee_choice_serializer.save()
             if request.accepted_renderer.format == "html":
                 return Response(
